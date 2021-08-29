@@ -11,7 +11,7 @@ emsMqtt	   sends read values to a mqtt broker
 
 emsMsb	   does the same to a MSB bus of a V4K installation
 
-emsCommand shall send commands to the MMC110 or the RC310 of a Buderus system
+emsCommand shall send commands (in the future, wip) to the MMC110 or the RC310 of a Buderus system
 
 emsMonitor show the same values from the shared memeory
 
