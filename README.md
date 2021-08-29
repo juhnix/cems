@@ -16,13 +16,16 @@ emsCommand shall send commands to the MMC110 or the RC310 of a Buderus system
 emsMonitor show the same values from the shared memeory
 
 
-emsSerio writes to and reads from message queues
+architecture
 
-emsDecode reads the messages from th receive queue and decodes it. The decoded
-values are written to a shared ememory segment
+emsSerio writes received data from the tty to a message queue and reads another message queue
+for things to send to the tty.
 
-emsMqtt and emsMsb read the values from this shared memeory segment and write these
-to a mqtt broker (server) resp. a MSB bus
+emsDecode reads the messages from the receive queue and decodes it. The decoded
+values are written to a shared memory segment.
+
+emsMqtt and emsMsb read the values from this shared memory segment and write these
+to a mqtt broker (server) resp. a MSB bus.
 
 
 
