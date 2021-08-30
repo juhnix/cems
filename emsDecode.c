@@ -1,6 +1,6 @@
 // emsDecode.c
 //
-// $Id: emsDecode.c 54 2021-08-29 17:26:55Z juh $
+// $Id$
 //
 
 #define _POSIX_C_SOURCE 200809L
