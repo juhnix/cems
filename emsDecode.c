@@ -296,7 +296,8 @@ int main(int argc , char *argv[])
 			    emsPtr->setTemperature = (float)buff[10];
 			    intval = (int)(256 * buff[11] + buff[12]);
 			    temp = (float)intval / 10.0;
-			    emsPtr->tempBoiler = temp;
+			    if (temp < 200.0)
+				emsPtr->tempBoiler = temp;
 			    power = (int)buff[14];
 			    emsPtr->power = power;
 			    emsPtr->loadingPump = (int)(buff[15] & 0x4); // bit 2
@@ -368,7 +369,8 @@ int main(int argc , char *argv[])
 			// water temp at byte 5/6 [0.1°C], set value water at byte 4 [°C], loading pump at byte 17.2
 			intval = (int)(256 * buff[5] + buff[6]);
 			temp = (float)intval / 10.0;
-			emsPtr->tempWater = temp;
+			if (temp < 200.0)
+			    emsPtr->tempWater = temp;
 			setWater = (int)buff[4];
 			emsPtr->setWaterTemp = (float)setWater;
 			emsPtr->circPump = buff[17] & 0x4; // bit 2
