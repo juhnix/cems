@@ -18,7 +18,8 @@ MONOBJS = emsMonitor.o itoa.o
 MQTTOBJS = emsMqtt.o configure.o mqtt.o parser/parser.a
 MSBOBJS = emsMsb.o configure.o msb.o parser/parser.a
 SYSTEMDFILES = ems.system
-SVNDEV := -D'SVN_REV="$(shell svnversion -n .)"'
+#SVNDEV := -D'SVN_REV="$(shell svnversion -n .)"'
+SVNDEV := -D'SVN_REV="$(shell git rev-list --count --first-parent HEAD)"'
 CFLAGS+= $(SVNDEV)
 CFLAGS+=-I /usr/local/include
 BINDIR = /usr/local/bin
