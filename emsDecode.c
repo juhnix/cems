@@ -1,6 +1,6 @@
 // emsDecode.c
 //
-// $Id$
+// $Id: emsDecode.c 65 2022-11-24 22:00:31Z juh $
 //
 
 #define _POSIX_C_SOURCE 200809L
@@ -15,8 +15,8 @@ int getConfig(enum varType, void *var, char *defVal, char *cFile, char *group, c
 extern int usleep (__useconds_t __useconds);
 
 // global vars to keep track of opTime and starts
-int OpTime = 0;
-int Starts = 0;
+long int OpTime = 0;
+long int Starts = 0;
 
 int main(int argc , char *argv[])
 {
@@ -25,11 +25,12 @@ int main(int argc , char *argv[])
     int sterr, i, c, len, result;
     float temp, temp2, current, nightTemp, dayTemp, holidayTemp;
     int power, intval, setTemp, setWater, year, month, day, hour, minute, second, dst, dayOfWeek;
-    int starts, opTime, status, hcMode, summerThreshold;
+    long int starts, opTime;
+    int status, hcMode, summerThreshold;
     key_t key = SHMKEY;
     pid_t daemonPid = 0;
     pid_t sid;
-    time_t currentTime, lastTime, duration = 0;
+    time_t currentTime, lastTime, duration = 0, liveSign;
     float consumption = 0.0;
     FILE *fp;
     int tries = 0;
@@ -38,7 +39,7 @@ int main(int argc , char *argv[])
     Daemon = true;
     Debug = false;
 
-#define DAEMON_NAME "ems-decode"
+#define DAEMON_NAME "emsDecode"
     sprintf(DaemonName, "%s", DAEMON_NAME);
 
     while ((c = getopt (argc, argv, "vnhr:")) != -1) {
@@ -232,7 +233,6 @@ int main(int argc , char *argv[])
 	    usleep(100000);
 	}   
 	else {
-	    // received telegram from ems bus
 	    if (Debug) {
 		sprintf(message, "%s: received message: %d bytes,", DaemonName, len);
 		for (i = 0; i < len; i++) {
@@ -242,16 +242,15 @@ int main(int argc , char *argv[])
 		LOGIT(message);
 	    }
 	    emsPtr->heartbeatDecode = time(NULL);
-
-	    switch (buff[0]) { // sender
-	    case EMS_DEVICE_ID_BOILER:
-		// MC110/UBA
-		sprintf(message, "MC110/UBA: ");
-		switch (buff[1]) { // recipient
+	    switch (buff[0]) { // from
+	    case 0x08:
+		// MC110
+		sprintf(message, "MC110: ");
+		switch (buff[1]) { // to
 		case 0:
 		    // to ALL
 		    switch (buff[2]) { // ems telegram type
-		    case EMS_TYPE_UBAErrorMessage:
+		    case 0xbf:
 			// UBAErrorMessage
 			// model type byte 5, err1 byte 9, err2 byte 10, err3 byte 11, errdec byte 12/13
 			emsPtr->model = buff[5];
@@ -263,10 +262,10 @@ int main(int argc , char *argv[])
 			sprintf(message2, " model %02x, errcode %02x %02x %02x, status %d",
 				buff[5], buff[9], buff[10], buff[11], intval);
 			snprintf(message, MAXPATH - strlen(message2),
-				 " from MC110/UBA: UBAErrorMessage, %s", message2);
+				 " from MC110: UBAErrorMessage, %s", message2);
 			LOGERR(message);
 			break;
-		    case EMS_TYPE_UBAOutdoorTempMessage:
+		    case 0xd1:
 			// UBAOutdoorTempMessage
 			// outdoor temp at byte 4/5 [0.1°C]
 			intval = (int)(256 * buff[4] + buff[5]);
@@ -274,12 +273,12 @@ int main(int argc , char *argv[])
 			emsPtr->tempOutside = temp;
 			sprintf(message2, " outdoor %2.1f °C", temp);
 			snprintf(message, MAXPATH - strlen(message2),
-				 " from MC110/UBA: UBAOutdoorTempMessage, %s", message2);
+				 " from MC110: UBAOutdoorTempMessage, %s", message2);
 			if (Debug)
 			    LOGIT(message);
 			break;
 		    case 0xe3:
-			// unknown message, print only in debug mode
+			// unknown message
 			//Boiler temp at byte 15/16 [0.1°C], power byte 17 [%]
 			intval = (int)(256 * buff[15] + buff[16]);
 			temp = (float)intval / 10.0;
@@ -298,8 +297,7 @@ int main(int argc , char *argv[])
 			    emsPtr->setTemperature = (float)buff[10];
 			    intval = (int)(256 * buff[11] + buff[12]);
 			    temp = (float)intval / 10.0;
-			    if (temp < 200.0)
-				emsPtr->tempBoiler = temp;
+			    emsPtr->tempBoiler = temp;
 			    power = (int)buff[14];
 			    emsPtr->power = power;
 			    emsPtr->loadingPump = (int)(buff[15] & 0x4); // bit 2
@@ -310,7 +308,8 @@ int main(int argc , char *argv[])
 			    sprintf(message2, " boiler %2.1f °C, power %d %%, current %2.1f µA", temp, power, current);
 			    snprintf(message, MAXPATH - strlen(message2),
 				     " from MC110: UBAMonitorFast, %s", message2);
-			    if (Debug)
+			    liveSign = emsPtr->heartbeatDecode % 600; 
+			    if (Debug || (liveSign == 0))
 				LOGIT(message);
 			} else if (buff[3] == 0x1b) {
 			    // exhaust temp at byte 8/9 [0.1°C], intake at byte 4/5 ?
@@ -330,40 +329,43 @@ int main(int argc , char *argv[])
 			break;
 		    case EMS_TYPE_UBAMonitorSlow:
 			// UBAMonitorSlow
-			// starts at 12/13/14, operating time at 15/16/17, ignition at 6.3,
-			//  pump at 6.5, water pump 6.7
+			// starts at 12/13/14, operating time at 15/16/17, ignition at 4.3,
+			//  pump at 4.5, water pump 4.7, blower 4.2
 			starts = (int)(256*256*buff[12] + 256*buff[13] + buff[14]);
 			if (starts == 0 || starts > 1000000) {
 			    // do nothing
 			} else {
 			    emsPtr->starts = starts;
 			}
-			opTime = (int)(256*256*buff[15] + 256 * buff[16] + buff[17]);
-			// from time to time strange values
-			if (opTime == 0 || opTime == 15361 || opTime > 600000) {
+			opTime = (long int)(256 * 256 * (unsigned char)buff[15] + 256 * (unsigned char)buff[16] + (unsigned char)buff[17]);
+			if (opTime == 0 || opTime == 15361 || opTime > 600000 || opTime < 10) {
 			    // do nothing
 			} else {
 			    emsPtr->opTime = opTime;
 			    if (OpTime == 0) {
-				// set it for first time (fingers crossed no "strange" value received!)
+				// set it for first time
 				OpTime = opTime;
 			    }
 			    else {
 				// check plausibility
-				if (opTime > OpTime + 100)
+				if (opTime > OpTime + 100 || opTime + 100 < OpTime) {
 				    emsPtr->opTime = OpTime;
-				else
+				}
+				else /* if (opTime < OpTime - 100)*/ {
 				    OpTime = opTime;
-				// TODO: could check for opTime < OpTime, to be sure
+				}
 			    }
 			}
-			emsPtr->status = buff[6];
-			emsPtr->burnerCode = buff[6];
-			//emsPtr->circPump = buff[6] & 0x80; // bit 7
-			emsPtr->pump = buff[6] & 0x20; // bit 5
-			sprintf(message2, " starts %d, op.time %d h %d m (%02x), status byte %02x",
-				starts, opTime / 60, opTime % 60, buff[15], buff[6]);
-			snprintf(message, MAXPATH - strlen(message2), " from MC110/UBA: UBAMonitorSlow, %s", message2);
+			emsPtr->status = buff[4];
+			emsPtr->burner = buff[4] & 0x04;
+			emsPtr->blower = buff[4] & 0x02;
+			emsPtr->circPump = buff[4] & 0x80; // bit 7
+			emsPtr->pump = buff[4] & 0x20; // bit 5
+			sprintf(message2,
+				" starts %ld, op.time %ld h %ld m, status byte %02x, burner %d, circ %d, pump %d",
+				starts, opTime / 60, opTime % 60,
+				emsPtr->status, emsPtr->burner, emsPtr->circPump, emsPtr->pump);
+			snprintf(message, MAXPATH - strlen(message2), " from MC110: UBAMonitorSlow, %s", message2);
 			if (Debug)
 			    LOGIT(message);
 			break;
@@ -372,8 +374,7 @@ int main(int argc , char *argv[])
 			// water temp at byte 5/6 [0.1°C], set value water at byte 4 [°C], loading pump at byte 17.2
 			intval = (int)(256 * buff[5] + buff[6]);
 			temp = (float)intval / 10.0;
-			if (temp < 200.0)
-			    emsPtr->tempWater = temp;
+			emsPtr->tempWater = temp;
 			setWater = (int)buff[4];
 			emsPtr->setWaterTemp = (float)setWater;
 			emsPtr->circPump = buff[17] & 0x4; // bit 2
@@ -381,7 +382,7 @@ int main(int argc , char *argv[])
 			emsPtr->circState2 = buff[17];
 			sprintf(message2, " warm water temp %2.1f °C, set temp is %d °C, circ %s, %02x %02x",
 				temp, setWater, emsPtr->circPump ? "on" : "off", buff[16], buff[17]);
-			snprintf(message, MAXPATH - strlen(message2), " from MC110/UBA: UBA Monitor Hot Water, %s", message2);
+			snprintf(message, MAXPATH - strlen(message2), " from MC110: UBA Monitor Hot Water, %s", message2);
 			if (Debug)
 			    LOGIT(message);
 			break;
@@ -390,7 +391,7 @@ int main(int argc , char *argv[])
 			if (buff[3] == 0x0 && buff[4] ==  0x7) {
 			    switch(buff[5]) {
 			    case 0xe4:
-				sprintf(message, " from MC110/UBA: ?_UBA Status (%02x) ems+ (%d bytes): ",
+				sprintf(message, " from MC110: ?_UBA Status (%02x) ems+ (%d bytes): ",
 					buff[5], len);
 				emsPtr->code1 = buff[9];
 				emsPtr->code2 =	buff[10];
@@ -409,7 +410,7 @@ int main(int argc , char *argv[])
 				    LOGIT(message);
 				break;
 			    default:
-				sprintf(message, " from MC110/UBA, undecoded message: (%02x) ems+ (%d bytes), ",
+				sprintf(message, " from MC110, undecoded message: (%02x) ems+ (%d bytes), ",
 					buff[5], len);
 				for (i = 0; i < len; i++) {
 				    sprintf(message2, " %02x", buff[i]);
@@ -421,7 +422,7 @@ int main(int argc , char *argv[])
 			}
 			break;
 		    default:
-			sprintf(message, " from MC110/UBA, undecoded message: (%02x) ems (%d bytes), ",
+			sprintf(message, " from MC110, undecoded message: (%02x) ems (%d bytes), ",
 				buff[2], len);
 			for (i = 0; i < len; i++) {
 			    sprintf(message2, " %02x", buff[i]);
@@ -432,12 +433,12 @@ int main(int argc , char *argv[])
 		    } // types
 		    break;
 			    
-		case 0x0b:
+		case 0x0B:
 		    // addressed to us
 		    switch (buff[2]) {
 		    default:
 			// wtf
-			sprintf(message, " from MC110/UBA, to us (0x0b), undecoded message: (%02x) ems (%d bytes), ",
+			sprintf(message, " from MC110, to us (0x0b), undecoded message: (%02x) ems (%d bytes), ",
 				buff[2], len);
 			for (i = 0; i < len; i++) {
 			    sprintf(message2, " %02x", buff[i]);
@@ -453,7 +454,8 @@ int main(int argc , char *argv[])
 		    switch (buff[2]) {
 		    case 0x14:
 			// response operation time
-			sprintf(message, " from MC110 to RC310, answer UBABetriebszeit ");
+			opTime = (long int)(256 * 256 * (unsigned char)(buff[5] & 0x3) + 256 * (unsigned char)buff[6] + (unsigned char)buff[7]);
+			sprintf(message, " from MC110 to RC310, answer UBABetriebszeit (%ld) ", opTime);
 			for (i = 0; i < len; i++) {
 			    sprintf(message2, " %02x", buff[i]);
 			    strcat(message, message2);
@@ -489,7 +491,7 @@ int main(int argc , char *argv[])
 		// RC310
 		sprintf(message, "RC310: ");
 		switch (buff[2]) {
-		case EMS_TYPE_RCTime:
+		case 0x06:
 		    // RCTimeMessage
 		    // year (-2000) byte 4, month at 5, day at 7
 		    // hour at 6, min at 8, sec at 9, dayOfWeek at 10

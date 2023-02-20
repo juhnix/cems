@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-#define DAEMON_NAME "ems-serio"
+#define DAEMON_NAME "emsSerio"
     sprintf(DaemonName, "%s", DAEMON_NAME);
 
     if (Daemon) {

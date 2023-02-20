@@ -11,21 +11,18 @@ emsMqtt	   sends read values to a mqtt broker
 
 emsMsb	   does the same to a MSB bus of a V4K installation
 
-emsCommand shall send commands (in the future, wip) to the MMC110 or the RC310 of a Buderus system
+emsCommand shall send commands to the MMC110 or the RC310 of a Buderus system
 
 emsMonitor show the same values from the shared memeory
 
 
-architecture
+emsSerio writes to and reads from message queues
 
-emsSerio writes received data from the tty to a message queue and reads another message queue
-for things to send to the tty.
+emsDecode reads the messages from th receive queue and decodes it. The decoded
+values are written to a shared ememory segment
 
-emsDecode reads the messages from the receive queue and decodes it. The decoded
-values are written to a shared memory segment.
-
-emsMqtt and emsMsb read the values from this shared memory segment and write these
-to a mqtt broker (server) resp. a MSB bus.
+emsMqtt and emsMsb read the values from this shared memeory segment and write these
+to a mqtt broker (server) resp. a MSB bus
 
 
 

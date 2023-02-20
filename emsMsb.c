@@ -1,7 +1,7 @@
 //
 // emsMsb.c - send ems values to msb
 //
-// $Id: emsMsb.c 48 2021-08-26 10:58:21Z juh $
+// $Id: emsMsb.c 64 2022-11-24 21:45:19Z juh $
 
 #define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
@@ -22,7 +22,7 @@ extern int usleep (__useconds_t __useconds);
 int LastboilerState;
 time_t LastBoilerOn, LastBoilerOff;
 
-#define SVN "$Id: emsMsb.c 48 2021-08-26 10:58:21Z juh $"
+#define SVN "$Id: emsMsb.c 64 2022-11-24 21:45:19Z juh $"
 
 int main (int argc, char** argv) {
     key_t key = SHMKEY;
@@ -79,7 +79,7 @@ int main (int argc, char** argv) {
     }
 
 #undef DAEMON_NAME
-#define DAEMON_NAME "ems-msb"
+#define DAEMON_NAME "emsMsb"
     sprintf(DaemonName, "%s", DAEMON_NAME);
     
     if (Daemon) {

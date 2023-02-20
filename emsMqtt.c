@@ -1,7 +1,7 @@
 //
 // emsMqtt.c - send ems values to mqtt broker
 //
-// $Id: emsMqtt.c 37 2021-08-17 22:00:53Z juh $
+// $Id: emsMqtt.c 64 2022-11-24 21:45:19Z juh $
 
 #define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
@@ -21,7 +21,7 @@ void SIGgen_handler_mqtt(int);
 int LastboilerState;
 time_t LastBoilerOn, LastBoilerOff;
 
-#define SVN "$Id: emsMqtt.c 37 2021-08-17 22:00:53Z juh $"
+#define SVN "$Id: emsMqtt.c 64 2022-11-24 21:45:19Z juh $"
 
 int main (int argc, char** argv) {
     key_t key = SHMKEY;
@@ -78,7 +78,7 @@ int main (int argc, char** argv) {
     }
 
 #undef DAEMON_NAME
-#define DAEMON_NAME "ems-mqtt"
+#define DAEMON_NAME "emsMqtt"
     sprintf(DaemonName, "%s", DAEMON_NAME);
     
     if (Daemon) {
@@ -333,10 +333,10 @@ int main (int argc, char** argv) {
 	sprintf(value, "%d", emsPtr->power);
 	mqttPublish(emsPtr, "ems/power", value, 1, false);
 	
-	sprintf(value, "%d", emsPtr->starts);
+	sprintf(value, "%ld", emsPtr->starts);
 	mqttPublish(emsPtr, "ems/starts", value, 1, false);
 	
-	sprintf(value, "%d", emsPtr->opTime);
+	sprintf(value, "%ld", emsPtr->opTime);
 	mqttPublish(emsPtr, "ems/opTime", value, 1, false);
 	
 	sprintf(value, "%.2f", emsPtr->setWaterTemp);

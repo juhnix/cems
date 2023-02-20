@@ -2,7 +2,7 @@
 // emsCommand.c
 // sends commands to ems bus
 //
-// $Id: emsCommand.c 36 2021-08-17 22:00:04Z juh $
+// $Id: emsCommand.c 64 2022-11-24 21:45:19Z juh $
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -33,7 +33,7 @@ int main(int argc , char *argv[])
     // default: no debug output    
     Debug = false;
 
-#define DAEMON_NAME "ems-command"
+#define DAEMON_NAME "emsCommand"
     sprintf(DaemonName, "%s", DAEMON_NAME);
 
     while ((c = getopt (argc, argv, "vht:")) != -1) {

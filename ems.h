@@ -1,7 +1,7 @@
 //
 // ems.h
 //
-// $Id: ems.h 48 2021-08-26 10:58:21Z juh $
+// $Id: ems.h 59 2022-03-06 17:16:02Z juh $
 
 #include <unistd.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@
 #define RCVQUEUE "/ems_bus_rx"
 #define MAXNAME 100
 #define MAXPATH 1000
-#define VERSION "$Id: ems.h 48 2021-08-26 10:58:21Z juh $"
+#define VERSION "$Id: ems.h 59 2022-03-06 17:16:02Z juh $"
 #define LOGIT(MSG)   if (Daemon) syslog(LOG_INFO, "%s", MSG); else fprintf(stderr, "%s\n", MSG);
 #define LOGERR(MSG)   if (Daemon) syslog(LOG_ERR, "%s", MSG); else fprintf(stderr, "%s\n", MSG);
 #define SHMKEY 2048
@@ -73,9 +73,11 @@ struct _ems_ {
     struct mosquitto *mosq;
     int power;
     float current;
-    int starts;
-    int opTime;
+    long int starts;
+    long int opTime;
     int pump;
+    int burner;
+    int blower;
     int boilerState;
     int waterState;
     int loadingPump;

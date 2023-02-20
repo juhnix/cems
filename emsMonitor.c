@@ -2,7 +2,7 @@
   emsMonitor.c
   display (live) some values of ems shared memory segment, runs as unpriviledeged user
 
-  $Id: emsMonitor.c 53 2021-08-29 17:26:06Z juh $
+  $Id: emsMonitor.c 62 2022-03-06 17:20:16Z juh $
 */
 
 #include <termios.h>
@@ -12,7 +12,7 @@
 #include "ems.h"
 #include "emsDevices.h"
 
-char SVN[] = "$Id: emsMonitor.c 53 2021-08-29 17:26:06Z juh $";
+char SVN[] = "$Id: emsMonitor.c 62 2022-03-06 17:20:16Z juh $";
 char hLine[] = "───────────────────────────────────────────────────────────────────────────";
 
 // declarations
@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
 	    printf("───────────────────────────\n");
 	    printf("boiler: %2.1f °C, water: %2.1f °C, outside: %2.1f °C, inside: %2.1f °C\n",
 		   emsPtr->tempBoiler, emsPtr->tempWater, emsPtr->tempOutside, emsPtr->tempInside);
-	    printf("flame current: %2.1f mA, temp exhaust: %2.1f °C, power: %d %%\n",
+	    printf("flame current: %2.1f µA, temp exhaust: %2.1f °C, power: %d %%\n",
 		   emsPtr->current, emsPtr->tempExhaust, emsPtr->power);
-	    printf("operation time %d h %d m, starts %d, average op time %.1f\n",
+	    printf("operation time %ld h %ld m, starts %ld, average op time %.1f\n",
 		   emsPtr->opTime / 60, emsPtr->opTime % 60, emsPtr->starts,
 		(double)emsPtr->opTime / (double)emsPtr->starts);
 	    printf("pump = %d, boilerState = %d, waterState = %d, loadingPump = %d\n",
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
 	}
 	printf("───────────────────────────\n");
 	printf(" press 'q' to quit, 'c' to switch data/configuration, 'd' to increase debug, 'x' to decrease debug level,\n");
-	printf(" 'm'/'a'/'o' for manual/automatic/offline mode, 'w' for 15min water boost, 't' stop boost, 's' toggle summer mode\n");
-	printf(" 'p'/'r' to activate/stop circulation pump for warm water, 'y' reset display, 'b' toggle boiler state\n");
+	printf(" 'w' water desinfect, 't' stop desinfect, 's' toggle summer mode\n");
+	printf(" 'p'/'r' to activate/stop circulation pump for warm water\n");
 	
 	int len = read(STDIN_FILENO, &ch, 1);
 	if (len == 1) {

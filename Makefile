@@ -18,8 +18,7 @@ MONOBJS = emsMonitor.o itoa.o
 MQTTOBJS = emsMqtt.o configure.o mqtt.o parser/parser.a
 MSBOBJS = emsMsb.o configure.o msb.o parser/parser.a
 SYSTEMDFILES = ems.system
-#SVNDEV := -D'SVN_REV="$(shell svnversion -n .)"'
-SVNDEV := -D'SVN_REV="$(shell git rev-list --count --first-parent HEAD)"'
+SVNDEV := -D'SVN_REV="$(shell svnversion -n .)"'
 CFLAGS+= $(SVNDEV)
 CFLAGS+=-I /usr/local/include
 BINDIR = /usr/local/bin
@@ -28,6 +27,9 @@ DEPS=ems.h
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+all:	emsSerio emsDecode emsMqtt emsMonitor emsCommand emsMsb emsMonitor
+
 
 emsSerio: $(SEROBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
@@ -56,12 +58,10 @@ clean:
 tags:
 	etags -l c -o TAGS *.c *.h
 
-all:	emsSerio emsDecode emsMqtt emsMonitor emsCommand emsMsb
-
 parser/parser.a:  parser/file.o parser/transform.o parser/parse.o parser/modify.o
 	cd parser && make parser.a
 
-install: emsSerio emsDecode emsMqtt emsCommand emsMsb
+install: emsSerio emsDecode emsMqtt emsCommand emsMsb emsMonitor
 	install $? $(BINDIR)
 	chmod +s $(addprefix $(BINDIR)/,$?)
 

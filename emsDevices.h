@@ -1,8 +1,6 @@
 // emsDevices.h
-// got defines from EMS-ESP - https://github.com/emsesp/EMS-ESP
-//         and from Th3M3/buderus_ems-wiki - https://github.com/Th3M3/buderus_ems-wiki
-//
-// $Id$
+// transferred from EMS-ESP - https://github.com/emsesp/EMS-ESP
+// $Id: emsDevices.h 55 2021-08-29 17:27:39Z juh $
 
 enum Brand {
 	    NO_BRAND = 0, // 0
