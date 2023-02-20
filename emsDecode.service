@@ -1,0 +1,27 @@
+# emsDecode.service
+# $Id: emsDecode.service 56 2022-02-20 00:17:18Z juh $
+
+[Unit]
+Description=decode read values from ems bus
+PartOf=ems.service
+After=emsSerio.service
+
+[Service]
+Type=forking
+PIDFile=/run/emsDecode.pid
+WorkingDirectory=/usr/local/bin
+#ExecStartPre=/usr/local/bin/reloadmodules.sh
+ExecStart=/usr/local/bin/emsDecode
+ExecStop=/bin/systemctl kill -s SIGTERM emsDecode
+ExecStop=/bin/sleep 5
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=EMSDECODE
+User=root
+Group=root
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=ems.service
+

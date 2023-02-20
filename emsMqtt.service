@@ -1,0 +1,27 @@
+# emsMqtt.service
+# $Id: emsMqtt.service 56 2022-02-20 00:17:18Z juh $
+
+[Unit]
+Description=send decoded values from ems bus to mqtt broker
+PartOf=ems.service
+After=emsDecode.service
+
+[Service]
+Type=forking
+PIDFile=/run/emsMqtt.pid
+WorkingDirectory=/usr/local/bin
+#ExecStartPre=/usr/local/bin/reloadmodules.sh
+ExecStart=/usr/local/bin/emsMqtt
+ExecStop=/bin/systemctl kill -s SIGTERM emsMqtt
+ExecStop=/bin/sleep 5
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=EMSMQTT
+User=root
+Group=root
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=ems.service
+

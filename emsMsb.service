@@ -1,0 +1,27 @@
+# emsMsb.service
+# $Id: emsMsb.service 56 2022-02-20 00:17:18Z juh $
+
+[Unit]
+Description=send decoded values from ems bus to msb
+PartOf=ems.service
+After=emsDecode.service
+
+[Service]
+Type=forking
+PIDFile=/run/emsMsb.pid
+WorkingDirectory=/usr/local/bin
+#ExecStartPre=/usr/local/bin/reloadmodules.sh
+ExecStart=/usr/local/bin/emsMsb
+ExecStop=/bin/systemctl kill -s SIGTERM emsMsb
+ExecStop=/bin/sleep 5
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=EMSMSB
+User=root
+Group=root
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=ems.service
+

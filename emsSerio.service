@@ -1,0 +1,27 @@
+# emsSerio.service
+# $Id: emsSerio.service 56 2022-02-20 00:17:18Z juh $
+
+[Unit]
+Description=serial read from ems bus
+PartOf=ems.service
+After=ems.service
+
+[Service]
+Type=forking
+PIDFile=/run/emsSerio.pid
+WorkingDirectory=/usr/local/bin
+#ExecStartPre=/usr/local/bin/reloadmodules.sh
+ExecStart=/usr/local/bin/emsSerio
+ExecStop=/bin/systemctl kill -s SIGTERM emsSerio
+ExecStop=/bin/sleep 5
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=EMSSERIO
+User=root
+Group=root
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=ems.service
+
