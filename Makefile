@@ -61,6 +61,10 @@ tags:
 parser/parser.a:  parser/file.o parser/transform.o parser/parse.o parser/modify.o
 	cd parser && make parser.a
 
+version.h:
+	git log -n 1 --date=short --format=format:"#define GIT_COMMIT \"rev.%ad.%h\"%n" HEAD > $@
+# git log -n 1 --date=short --format=format:"rev.%ad.%h" HEAD
+
 install: emsSerio emsDecode emsMqtt emsCommand emsMsb emsMonitor
 	install $? $(BINDIR)
 	chmod +s $(addprefix $(BINDIR)/,$?)
